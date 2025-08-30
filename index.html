@@ -7,20 +7,22 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-  #lastTemp { font-size: 2em; margin-bottom: 20px; }
+  #lastTemp { font-size: 2em; margin-bottom: 10px; }
+  #lastTime { font-size: 1.2em; margin-bottom: 20px; color: #555; }
   canvas { max-width: 100%; }
 </style>
 </head>
 <body>
 
-<h1>Otthoni kültéri hőmérséklet</h1>
+<h1>Kültéri időjárás állomás</h1>
 <div id="lastTemp">Betöltés...</div>
+<div id="lastTime"></div>
 <canvas id="tempChart"></canvas>
 
 <script>
-const apiKey = 'XG3F9TP24AF5QF8A'; // a saját Thingspeak API kulcsod
-const channelId = '3053905'; // a Thingspeak csatorna azonosítója
-const updateInterval = 15000; // 15 mp-ként frissítjük az adatot
+const apiKey = 'XG3F9TP24AF5QF8A'; // Thingspeak API kulcs
+const channelId = '3053905'; // Thingspeak csatorna azonosítója
+const updateInterval = 15000; // 15 mp-ként adatfrissítés
 
 let chart;
 let timeLabels = [];
@@ -33,9 +35,12 @@ async function fetchData() {
         const data = await response.json();
         const feeds = data.feeds;
 
-        // Frissítjük a numerikus értéket
-        const lastTemp = feeds[feeds.length - 1].field1;
-        document.getElementById('lastTemp').innerText = `${lastTemp} °C`;
+        // Utolsó mérés adatainak lekérése
+        const lastTemp = Number(feeds[feeds.length - 1].field1).toFixed(2);
+        const lastTime = new Date(feeds[feeds.length - 1].created_at).toLocaleString();
+
+        document.getElementById('lastTemp').innerText = `Aktuális hőmérséklet: ${lastTemp} °C`;
+        document.getElementById('lastTime').innerText = `Utolsó mérés időpontja: ${lastTime}`;
 
         // Adatok a grafikonhoz
         timeLabels = feeds.map(f => new Date(f.created_at).toLocaleTimeString());
@@ -45,6 +50,7 @@ async function fetchData() {
     } catch (err) {
         console.error(err);
         document.getElementById('lastTemp').innerText = 'Hiba az adatok lekérésekor';
+        document.getElementById('lastTime').innerText = '';
     }
 }
 
