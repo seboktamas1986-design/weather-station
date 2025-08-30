@@ -75,4 +75,21 @@ function updateChart() {
                 responsive: true,
                 scales: {
                     x: { display: true },
-           
+                    y: { display: true, beginAtZero: false }
+                }
+            }
+        });
+    } else {
+        chart.data.labels = timeLabels;
+        chart.data.datasets[0].data = tempData;
+        chart.update();
+    }
+}
+
+// Első adatlekérés és frissítés interval
+fetchData();
+setInterval(fetchData, updateInterval);
+</script>
+
+</body>
+</html>
