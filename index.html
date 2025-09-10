@@ -10,6 +10,8 @@
   #lastTemp { font-size: 2em; margin-bottom: 10px; }
   #lastTime { font-size: 1.2em; margin-bottom: 20px; color: #555; }
   canvas { max-width: 100%; }
+  #minmax { margin-top: 15px; font-size: 1.2em; }
+  .sub { font-size: 0.8em; color: #555; }
 </style>
 </head>
 <body>
@@ -18,6 +20,7 @@
 <div id="lastTemp">Betöltés...</div>
 <div id="lastTime"></div>
 <canvas id="tempChart"></canvas>
+<div id="minmax"></div>
 
 <script>
 const apiKey = 'XG3F9TP24AF5QF8A'; // Thingspeak API kulcs
@@ -31,9 +34,10 @@ let tempData = [];
 // Funkció a Thingspeak adatok lekérésére
 async function fetchData() {
     try {
-        const response = await fetch(`https://api.thingspeak.com/channels/${channelId}/fields/1.json?api_key=${apiKey}&results=20`);
+        // 288 adat kb. 24 órányi, ha 5 percenként mérsz
+        const response = await fetch(`https://api.thingspeak.com/channels/${channelId}/fields/1.json?api_key=${apiKey}&results=288`);
         const data = await response.json();
-        const feeds = data.feeds;
+        const feeds = data.feeds.filter(f => f.field1 !== null);
 
         // Utolsó mérés adatainak lekérése
         const lastTemp = Number(feeds[feeds.length - 1].field1).toFixed(2);
@@ -47,10 +51,26 @@ async function fetchData() {
         tempData = feeds.map(f => parseFloat(f.field1));
 
         updateChart();
+
+        // Min / Max számítás
+        const minVal = Math.min(...tempData);
+        const maxVal = Math.max(...tempData);
+
+        const minIndex = tempData.indexOf(minVal);
+        const maxIndex = tempData.indexOf(maxVal);
+
+        const minTime = new Date(feeds[minIndex].created_at).toLocaleString();
+        const maxTime = new Date(feeds[maxIndex].created_at).toLocaleString();
+
+        document.getElementById('minmax').innerHTML = 
+            `Elmúlt 24 óra minimuma: ${minVal.toFixed(2)} °C <span class="sub">(${minTime})</span><br>
+             Elmúlt 24 óra maximum: ${maxVal.toFixed(2)} °C <span class="sub">(${maxTime})</span>`;
+        
     } catch (err) {
         console.error(err);
         document.getElementById('lastTemp').innerText = 'Hiba az adatok lekérésekor';
         document.getElementById('lastTime').innerText = '';
+        document.getElementById('minmax').innerText = '';
     }
 }
 
